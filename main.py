@@ -1,43 +1,37 @@
-from fpdf import FPDF
-import pandas as pd
- 
+from PDFGenerator import PDFGenerator
+from topics import TopicReader
 
-pdf = FPDF(orientation="portrait", unit="mm",format="A4")
-pdf.set_auto_page_break(auto=False, margin=0)
+# Define constants for configuration at the top of the file
+INPUT_FILE = "topics.csv"
+OUTPUT_FILE = "output.pdf"
 
-df = pd.read_csv("topics.csv")
+def main():
+    """
+    Main function to orchestrate the PDF generation.
+    """
+    reader = TopicReader(INPUT_FILE)
+    topics_list = reader.get_topics()
+    
+    if not topics_list:
+        print("No topics found. Exiting the program.")
+        return
 
-for index, row in df.iterrows():
+    generator = PDFGenerator()
 
-     #set the header
-     pdf.add_page()
-     pdf.set_text_color(0, 0, 0)
-     pdf.set_font(family="Times",style="B" ,size=24)
-     pdf.cell(w=0, h=12, txt=row["Topic"], align="L", ln=1)
-     pdf.line(10, 21, 200, 21)
-     
-     #add lines
-     for i in range(31, 291,10):
-          pdf.line(10, i, 200, i)
-     
-     # set the footer
-     pdf.ln(265)
-     pdf.set_font(family="Times",style="I" ,size=8)
-     pdf.set_text_color(0, 0, 0)
-     pdf.cell(w=0, h=10, txt=row["Topic"], align="R")
-     
-     
-     for i in range(row["Pages"] - 1):
-          pdf.add_page()
-          
-          #add lines
-          for j in range(31, 291,10):
-               pdf.line(10, j, 200, j)
-          
-          # set the footer
-          pdf.ln(273)
-          pdf.set_font(family="Times",style="I" ,size=8)
-          pdf.set_text_color(0, 0, 0)
-          pdf.cell(w=0, h=10, txt=row["Topic"], align="R")
-     
-pdf.output("output.pdf")
+    print("Starting PDF generation...")
+    for topic in topics_list:
+        print(f"- Processing topic: {topic['Topic']}")
+        # Add the main topic page
+        generator.add_topic_pg(topic["Topic"])
+        
+        # Add the extra pages
+        for _ in range(topic["Pages"] - 1):
+            generator.add_extra_pg(topic["Topic"])
+
+    generator.output(OUTPUT_FILE)
+    print(f"PDF successfully created at '{OUTPUT_FILE}'!")
+
+
+# Main
+if __name__ == "__main__":
+    main()
